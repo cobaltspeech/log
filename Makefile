@@ -30,4 +30,4 @@ lint: $(LINTER)
 .PHONY: test
 test:
 	go test -cover ./...
-	go test -cover ./... -tags cobalt_debug
+	go test -cover ./... -tags cobalt_log_trace

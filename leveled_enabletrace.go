@@ -1,4 +1,4 @@
-// +build cobalt_debug
+// +build cobalt_log_trace
 
 /*
    Copyright (2020) Cobalt Speech and Language Inc.
@@ -22,7 +22,7 @@ import "github.com/cobaltspeech/log/pkg/level"
 
 // Trace sends the given key value pairs to the trace logger
 func (l *LeveledLogger) Trace(keyvals ...interface{}) {
-	if l.level == level.Trace {
-		l.traceLogger.Log(keyvals...)
+	if l.filterLevel&level.Trace > 0 {
+		l.log(level.Trace, keyvals...)
 	}
 }

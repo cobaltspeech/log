@@ -16,15 +16,15 @@
 
 package log
 
-// discardLogger implements the Logger interface and ignores all logging
+// DiscardLogger implements the Logger interface and ignores all logging
 // messages.
-type discardLogger struct{}
+type DiscardLogger struct{}
 
-func NewDiscardLogger() *discardLogger {
-	return &discardLogger{}
+func NewDiscardLogger() *DiscardLogger {
+	return &DiscardLogger{}
 }
 
-func (l *discardLogger) Error(keyvals ...interface{}) {}
-func (l *discardLogger) Info(keyvals ...interface{})  {}
-func (l *discardLogger) Debug(keyvals ...interface{}) {}
-func (l *discardLogger) Trace(keyvals ...interface{}) {}
+func (l *DiscardLogger) Error(keyvals ...interface{}) {}
+func (l *DiscardLogger) Info(keyvals ...interface{})  {}
+func (l *DiscardLogger) Debug(keyvals ...interface{}) {}
+func (l *DiscardLogger) Trace(keyvals ...interface{}) {}

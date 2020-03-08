@@ -1,21 +1,19 @@
 package log_test
 
 import (
-	"os"
-
 	"github.com/cobaltspeech/log"
 	"github.com/cobaltspeech/log/pkg/level"
 )
 
 func Example() {
-	// Create a leveled logger with desired logging level
-	l := log.NewLeveledLogger(os.Stderr, level.Info)
+	// Create a leveled logger
+	l := log.NewLeveledLogger()
 
 	// Provide the logger to library functions
 	Divide(l, 5, 0)
 
 	// Change the logging level at runtime
-	l.SetLevel(level.Debug)
+	l.SetFilterLevel(level.Debug | level.Info | level.Error)
 
 	// Provide the logger to constructors that support the Logger interface
 	e := NewEngine(l)

@@ -17,60 +17,136 @@
 package log
 
 import (
+	"encoding"
+	"encoding/json"
+	"fmt"
 	"io"
+	"log"
+	"os"
+	"strings"
 
-	"github.com/cobaltspeech/log/internal/logfunc"
 	"github.com/cobaltspeech/log/pkg/level"
 )
 
-// LeveledLogger writes messages to the provided io.Writer using the go stdlib
-// log package.  It implements the Logger interface and thus has four logging
-// levels.  Level TRACE is only available in debug builds (build tag
-// cobalt_debug)
+// LeveledLogger implements the Logger interface and uses the go stdlib log
+// package to perform logging.  Each log message has a level prefix followed by
+// JSON representation of the data being logged.  Messages with level TRACE are
+// suppressed by default and only produced if the build tag `cobalt_log_trace`
+// is used.
 type LeveledLogger struct {
-	errorLogger logfunc.Logger
-	infoLogger  logfunc.Logger
-	debugLogger logfunc.Logger
-	traceLogger logfunc.Logger
-
-	level level.Level
+	logger      *log.Logger
+	filterLevel level.Level
 }
 
-// NewLeveledLogger returns a new Leveledlogger with logs filtered at the given level.
-func NewLeveledLogger(w io.Writer, lvl level.Level) *LeveledLogger {
-	return &LeveledLogger{
-		level:       lvl,
-		errorLogger: logfunc.NewJSONLogger(w, level.Error),
-		infoLogger:  logfunc.NewJSONLogger(w, level.Info),
-		debugLogger: logfunc.NewJSONLogger(w, level.Debug),
-		traceLogger: logfunc.NewJSONLogger(w, level.Trace),
+// we define osStdErr so that it can be changed for testing
+var osStderr io.Writer = os.Stderr
+
+// NewLeveledLogger returns a new Leveledlogger that writes Error and Info
+// messages to stderr.  These defaults can be changed by providing Options.
+func NewLeveledLogger(opts ...Option) *LeveledLogger {
+	l := LeveledLogger{}
+	l.filterLevel = level.Default
+
+	for _, opt := range opts {
+		opt(&l)
+	}
+
+	if l.logger == nil {
+		l.logger = log.New(osStderr, "", log.LstdFlags)
+	}
+
+	return &l
+}
+
+type Option func(*LeveledLogger)
+
+// WithOutput returns an Option that configures the LeveledLogger to write all
+// log messages to the given Writer.  Do not combine with WithLogger
+func WithOutput(w io.Writer) Option {
+	return func(l *LeveledLogger) {
+		l.logger = log.New(w, "", log.LstdFlags)
 	}
 }
 
-// SetLevel changes the level of the given logger to the provided level.  This
-// method should not be called concurrently with other methods.
-func (l *LeveledLogger) SetLevel(lvl level.Level) {
-	l.level = lvl
+// WithLogger returns an Option that configures the LeveledLogger to use the
+// provided log.Logger from go's stdlib package.  Do not combine with WithOutput.
+func WithLogger(logger *log.Logger) Option {
+	return func(l *LeveledLogger) {
+		l.logger = logger
+	}
+}
+
+// WithFilterLevel configures the LeveledLogger to only log messages with the
+// specified logging levels.
+func WithFilterlevel(lvl level.Level) Option {
+	return func(l *LeveledLogger) {
+		l.filterLevel = lvl
+	}
+}
+
+// SetFilterLevel changes the level of the given logger to the provided level.
+// This method should not be called concurrently with other methods.
+func (l *LeveledLogger) SetFilterLevel(lvl level.Level) {
+	l.filterLevel = lvl
 }
 
 // Error sends the given key value pairs to the error logger
 func (l *LeveledLogger) Error(keyvals ...interface{}) {
-	// errors are always logged
-	l.errorLogger.Log(keyvals...)
+	if l.filterLevel&level.Error > 0 {
+		l.log(level.Error, keyvals...)
+	}
 }
 
 // Info sends the given key value pairs to the info logger
 func (l *LeveledLogger) Info(keyvals ...interface{}) {
-	if l.level <= level.Info {
-		l.infoLogger.Log(keyvals...)
+	if l.filterLevel&level.Info > 0 {
+		l.log(level.Info, keyvals...)
 	}
 }
 
 // Debug sends the given key value pairs to the debug logger
 func (l *LeveledLogger) Debug(keyvals ...interface{}) {
-	if l.level <= level.Debug {
-		l.debugLogger.Log(keyvals...)
+	if l.filterLevel&level.Debug > 0 {
+		l.log(level.Debug, keyvals...)
 	}
 }
 
-// Trace is defined in leveled_release.go and leveled_debug.go
+// Trace is defined in leveled_enabletrace.go and leveled_disabletrace.go
+
+func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
+	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
+	m := make(map[string]interface{}, n)
+	for i := 0; i < len(keyvals); i += 2 {
+		k := keyvals[i]
+		var v interface{} = "missing"
+		if i+1 < len(keyvals) {
+			v = keyvals[i+1]
+		}
+
+		key := fmt.Sprint(k)
+
+		// If v implements json.Marshaler or encoding.TextMarshaler, we give that a priority over fmt.Sprint
+		var val interface{}
+		switch v.(type) {
+		case json.Marshaler:
+			val = v
+		case encoding.TextMarshaler:
+			val = v
+		default:
+			val = fmt.Sprint(v)
+		}
+
+		m[key] = val
+	}
+
+	var sb strings.Builder
+	enc := json.NewEncoder(&sb)
+	enc.SetEscapeHTML(false)
+	err := enc.Encode(m)
+	if err != nil {
+		l.logger.Printf(`%-5s {"msg":"logging failure","error":%q}`, level.Error, err)
+		return
+	}
+	l.logger.Printf("%-5s %s", lvl, sb.String())
+
+}
