@@ -1,4 +1,4 @@
-// +build !cobalt_debug
+// +build !cobalt_log_trace
 
 /*
    Copyright (2020) Cobalt Speech and Language Inc.

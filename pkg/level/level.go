@@ -27,6 +27,10 @@ const (
 	Error
 )
 
+const None Level = 0
+const Default Level = Info | Error
+const All Level = Trace | Debug | Info | Error
+
 // levelCodes provides a string representation of different supported levels.
 var levelCodes = map[Level]string{
 	Trace: "trace",
