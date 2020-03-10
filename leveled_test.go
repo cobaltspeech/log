@@ -33,7 +33,9 @@ import (
 func TestLeveledLogger(t *testing.T) {
 	// LeveledLogger writes to os.Stderr by default; patch it to retrieve output
 	var b bytes.Buffer
+
 	osStderr = &b
+
 	defer func() {
 		// reset osStderr
 		osStderr = os.Stderr
@@ -50,14 +52,15 @@ func TestLeveledLogger_WithOutput(t *testing.T) {
 }
 
 func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
-	wantJSON := `{"msg":"test_message"}`
 	l.Error("msg", "test_message")
 
+	wantJSON := `{"msg":"test_message"}`
 	rDate := `[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]`
 	rTime := `[0-9][0-9]:[0-9][0-9]:[0-9][0-9]`
-
 	pattern := "^" + rDate + " " + rTime + " error " + wantJSON + "\n"
+
 	matched, err := regexp.Match(pattern, b.Bytes())
+
 	if err != nil {
 		t.Fatalf("pattern %q did not compile: %s", pattern, err)
 	}
@@ -146,12 +149,12 @@ func TestLeveledLogger_Concurrent(t *testing.T) {
 	// this test verifies that LeveledLogger can be called concurrently.
 	// This is done by creating N concurrent logging calls and ensuring that
 	// the output has exactly N log lines.
-
 	var b bytes.Buffer
 	logger := log.New(&b, "", 0)
 	l := NewLeveledLogger(WithLogger(logger))
 
 	var wg sync.WaitGroup
+
 	N := 100
 	wg.Add(N)
 
@@ -165,7 +168,9 @@ func TestLeveledLogger_Concurrent(t *testing.T) {
 	wg.Wait()
 
 	scanner := bufio.NewScanner(&b)
+
 	var i int
+
 	for i = 0; scanner.Scan(); i++ {
 		x := strings.Fields(scanner.Text())
 		if len(x) != 2 {

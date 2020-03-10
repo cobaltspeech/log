@@ -125,8 +125,10 @@ func (l *LeveledLogger) Trace(keyvals ...interface{}) {
 func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
 	m := make(map[string]interface{}, n)
+
 	for i := 0; i < len(keyvals); i += 2 {
 		k := keyvals[i]
+
 		var v interface{} = "missing"
 		if i+1 < len(keyvals) {
 			v = keyvals[i+1]
@@ -151,10 +153,11 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	var sb strings.Builder
 	enc := json.NewEncoder(&sb)
 	enc.SetEscapeHTML(false)
-	err := enc.Encode(m)
-	if err != nil {
+
+	if err := enc.Encode(m); err != nil {
 		l.logger.Printf(`%-5s {"msg":"logging failure","error":%q}`, level.Error, err)
 		return
 	}
+
 	l.logger.Printf("%-5s %s", lvl, sb.String())
 }

@@ -37,6 +37,7 @@ func Divide(l log.Logger, a, b int) int {
 			"msg", "attempt to divide by zero",
 			"a", a,
 			"b", b)
+
 		return 0
 	}
 
