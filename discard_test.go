@@ -21,6 +21,5 @@ import "testing"
 func TestDiscardLogger(t *testing.T) {
 	// this test only asserts that DiscardLogger implements the Logger
 	// interface.  There are no values to test.
-
 	var _ Logger = NewDiscardLogger()
 }
