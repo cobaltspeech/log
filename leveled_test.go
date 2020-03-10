@@ -26,6 +26,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/cobaltspeech/log/pkg/level"
 )
 
 func TestLeveledLogger(t *testing.T) {
@@ -45,7 +47,6 @@ func TestLeveledLogger_WithOutput(t *testing.T) {
 	var b bytes.Buffer
 	l := NewLeveledLogger(WithOutput(&b))
 	logAndTest(t, l, &b)
-
 }
 
 func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
@@ -64,7 +65,56 @@ func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
 	if !matched {
 		t.Error("message did not match pattern")
 	}
+}
 
+func TestLeveledLogger_SetFilterLevel(t *testing.T) {
+	writelogs := func(l Logger, label string) {
+		l.Trace("msg", "trace_message", "label", label)
+		l.Debug("msg", "debug_message", "label", label)
+		l.Info("msg", "info_message", "label", label)
+		l.Error("msg", "error_message", "label", label)
+	}
+
+	var b bytes.Buffer
+	logger := log.New(&b, "", 0)
+	l := NewLeveledLogger(WithLogger(logger))
+
+	// first use the default filter level
+	writelogs(l, "default filter level")
+
+	// now create a new logger with filter level set
+	l = NewLeveledLogger(WithLogger(logger), WithFilterLevel(level.Debug))
+	writelogs(l, "WithFilterLevel(debug)")
+
+	l.SetFilterLevel(level.Info)
+	writelogs(l, "SetFilterLevel(Info)")
+
+	l.SetFilterLevel(level.Info | level.Debug)
+	writelogs(l, "SetFilterLevel(Info|Debug)")
+
+	l.SetFilterLevel(level.None)
+	writelogs(l, "SetFilterLevel(None)")
+
+	l.SetFilterLevel(level.All)
+	writelogs(l, "SetFilterLevel(All)")
+
+	fmt.Println(b.String())
+
+	want := `
+info  {"label":"default filter level","msg":"info_message"}
+error {"label":"default filter level","msg":"error_message"}
+debug {"label":"WithFilterLevel(debug)","msg":"debug_message"}
+info  {"label":"SetFilterLevel(Info)","msg":"info_message"}
+debug {"label":"SetFilterLevel(Info|Debug)","msg":"debug_message"}
+info  {"label":"SetFilterLevel(Info|Debug)","msg":"info_message"}
+trace {"label":"SetFilterLevel(All)","msg":"trace_message"}
+debug {"label":"SetFilterLevel(All)","msg":"debug_message"}
+info  {"label":"SetFilterLevel(All)","msg":"info_message"}
+error {"label":"SetFilterLevel(All)","msg":"error_message"}
+`
+	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
+		t.Errorf("default filter level: got %q, want %q", got, want)
+	}
 }
 
 func TestLeveledLogger_log_jsonErrors(t *testing.T) {

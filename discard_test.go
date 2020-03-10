@@ -19,12 +19,8 @@ package log
 import "testing"
 
 func TestDiscardLogger(t *testing.T) {
-	// this test only asserts the implementation of Logger.  There are no
-	// values to test.
+	// this test only asserts that DiscardLogger implements the Logger
+	// interface.  There are no values to test.
 
-	l := NewDiscardLogger()
-	l.Trace("msg", "trace message")
-	l.Debug("msg", "debug message")
-	l.Info("msg", "info message")
-	l.Error("msg", "error message")
+	var _ Logger = NewDiscardLogger()
 }
