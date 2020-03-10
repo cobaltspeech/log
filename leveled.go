@@ -30,9 +30,7 @@ import (
 
 // LeveledLogger implements the Logger interface and uses the go stdlib log
 // package to perform logging.  Each log message has a level prefix followed by
-// JSON representation of the data being logged.  Messages with level TRACE are
-// suppressed by default and only produced if the build tag `cobalt_log_trace`
-// is used.
+// JSON representation of the data being logged.
 type LeveledLogger struct {
 	logger      *log.Logger
 	filterLevel level.Level
@@ -61,7 +59,7 @@ func NewLeveledLogger(opts ...Option) *LeveledLogger {
 type Option func(*LeveledLogger)
 
 // WithOutput returns an Option that configures the LeveledLogger to write all
-// log messages to the given Writer.  Do not combine with WithLogger
+// log messages to the given Writer.  Do not combine with WithLogger.
 func WithOutput(w io.Writer) Option {
 	return func(l *LeveledLogger) {
 		l.logger = log.New(w, "", log.LstdFlags)
@@ -76,42 +74,53 @@ func WithLogger(logger *log.Logger) Option {
 	}
 }
 
-// WithFilterLevel configures the LeveledLogger to only log messages with the
-// specified logging levels.
-func WithFilterlevel(lvl level.Level) Option {
+// WithFilterLevel configures the new LeveledLogger being created to only log
+// messages with the specified logging levels.
+func WithFilterLevel(lvl level.Level) Option {
 	return func(l *LeveledLogger) {
 		l.filterLevel = lvl
 	}
 }
 
-// SetFilterLevel changes the level of the given logger to the provided level.
-// This method should not be called concurrently with other methods.
+// SetFilterLevel changes the level of the given logger, at runtime, to the
+// provided level.  An application may want to do this to enable debugging
+// messages in production, without shutting down and reconfiguring the logger.
+//
+// This method is expected to be called rarely, and it does not use mutexes to
+// lock the level change operations.  Applications may observe temporarily
+// indeterminate filtering behavior when this method is called concurrently with
+// other logging methods.
 func (l *LeveledLogger) SetFilterLevel(lvl level.Level) {
 	l.filterLevel = lvl
 }
 
-// Error sends the given key value pairs to the error logger
+// Error sends the given key value pairs to the error logger.
 func (l *LeveledLogger) Error(keyvals ...interface{}) {
 	if l.filterLevel&level.Error > 0 {
 		l.log(level.Error, keyvals...)
 	}
 }
 
-// Info sends the given key value pairs to the info logger
+// Info sends the given key value pairs to the info logger.
 func (l *LeveledLogger) Info(keyvals ...interface{}) {
 	if l.filterLevel&level.Info > 0 {
 		l.log(level.Info, keyvals...)
 	}
 }
 
-// Debug sends the given key value pairs to the debug logger
+// Debug sends the given key value pairs to the debug logger.
 func (l *LeveledLogger) Debug(keyvals ...interface{}) {
 	if l.filterLevel&level.Debug > 0 {
 		l.log(level.Debug, keyvals...)
 	}
 }
 
-// Trace is defined in leveled_enabletrace.go and leveled_disabletrace.go
+// Trace sends the given key value pairs to the trace logger.
+func (l *LeveledLogger) Trace(keyvals ...interface{}) {
+	if l.filterLevel&level.Trace > 0 {
+		l.log(level.Trace, keyvals...)
+	}
+}
 
 func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
@@ -148,5 +157,4 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 		return
 	}
 	l.logger.Printf("%-5s %s", lvl, sb.String())
-
 }

@@ -17,17 +17,21 @@ $(LINTER):
 # gofmt.  gofmt produces output with a list of files that have fmt errors.  If
 # we have an empty output, we exit with 0 status, otherwise we exit with nonzero
 # status.
-.PHONY: fmt
-fmt:
+.PHONY: fmt-check
+fmt-check:
 	BADFILES=$$(gofmt -l -d $$(find . -type f -name '*.go')) && [ -z "$$BADFILES" ] && exit 0
 
+# Run go-fmt and automatically fix issues
+.PHONY: fmt
+fmt:
+	gofmt -s -w $$(find . -type f -name '*.go')
+
 # Run lint checks
-.PHONY: lint
-lint: $(LINTER)
+.PHONY: lint-check
+lint-check: $(LINTER)
 	$(LINTER) run
 
 # Run tests
 .PHONY: test
 test:
 	go test -cover ./...
-	go test -cover ./... -tags cobalt_log_trace

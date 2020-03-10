@@ -43,7 +43,7 @@ if (env.CHANGE_ID || env.TAG_NAME) {
 			    try {
 				setBuildStatus("fmt", "PENDING", "")
 				echo "Running gofmt to check coding style"
-				sh "make fmt"
+				sh "make fmt-check"
 				setBuildStatus("fmt", "SUCCESS", "Files are correctly formatted.")
 			    } catch (err) {
 				setBuildStatus("fmt", "ERROR", "Some go files not correctly formatted.")
@@ -55,7 +55,7 @@ if (env.CHANGE_ID || env.TAG_NAME) {
 			    try {
 				setBuildStatus("lint", "PENDING", "")
 				echo "Running linter to catch lint"
-				sh "make lint"
+				sh "make lint-check"
 				setBuildStatus("lint", "SUCCESS", "No linter errors")
 			    } catch (err) {
 				setBuildStatus("lint", "ERROR", "Some go files have linter errors.")
