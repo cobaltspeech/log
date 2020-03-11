@@ -101,8 +101,6 @@ func TestLeveledLogger_SetFilterLevel(t *testing.T) {
 	l.SetFilterLevel(level.All)
 	writelogs(l, "SetFilterLevel(All)")
 
-	fmt.Println(b.String())
-
 	want := `
 info  {"label":"default filter level","msg":"info_message"}
 error {"label":"default filter level","msg":"error_message"}
