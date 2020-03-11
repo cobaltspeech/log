@@ -50,6 +50,10 @@ func TestContextLogger(t *testing.T) {
 	l4 := With(l2, "key3", "value3")
 	writelogs(l4, "With(key1,key3)")
 
+	// create a new logger with empty keyvals
+	l5 := With(l2)
+	writelogs(l5, "With(key1,empty)")
+
 	want := `
 trace {"label":"default logger","msg":"trace_message"}
 debug {"label":"default logger","msg":"debug_message"}
@@ -67,6 +71,10 @@ trace {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"trace_me
 debug {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"debug_message"}
 info  {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"info_message"}
 error {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"error_message"}
+trace {"key1":"value1","label":"With(key1,empty)","msg":"trace_message"}
+debug {"key1":"value1","label":"With(key1,empty)","msg":"debug_message"}
+info  {"key1":"value1","label":"With(key1,empty)","msg":"info_message"}
+error {"key1":"value1","label":"With(key1,empty)","msg":"error_message"}
 `
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
 		t.Errorf("default filter level: got %q, want %q", got, want)
