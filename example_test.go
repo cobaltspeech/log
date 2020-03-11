@@ -7,16 +7,19 @@ import (
 
 func Example() {
 	// Create a leveled logger
-	l := log.NewLeveledLogger()
+	logger := log.NewLeveledLogger()
 
 	// Provide the logger to library functions
-	Divide(l, 5, 0)
+	Divide(logger, 5, 0)
 
 	// Change the logging level at runtime
-	l.SetFilterLevel(level.Debug | level.Info | level.Error)
+	logger.SetFilterLevel(level.Debug | level.Info | level.Error)
+
+	// Create a contextual logger to automatically add keyval pairs for all log messages
+	engLogger := log.With(logger, "module", "engine")
 
 	// Provide the logger to constructors that support the Logger interface
-	e := NewEngine(l)
+	e := NewEngine(engLogger)
 	e.Run()
 }
 
