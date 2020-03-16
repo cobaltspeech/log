@@ -35,3 +35,8 @@ lint-check: $(LINTER)
 .PHONY: test
 test:
 	go test -cover ./...
+
+# Nothing to build
+.PHONY: build
+build:
+	echo "Nothing to build"
