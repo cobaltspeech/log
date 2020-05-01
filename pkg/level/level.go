@@ -42,3 +42,24 @@ var levelCodes = map[Level]string{
 func (l Level) String() string {
 	return levelCodes[l]
 }
+
+// Verbosity maps an integer verbosity level to appropriate Level.  This maybe
+// helpful for cmdline applications that need to provide a `-verbosity <int>`
+// flag to control logging verbosity.
+func Verbosity(v int) Level {
+	l := Error
+
+	if v >= 1 { //nolint:gomnd
+		l |= Info
+	}
+
+	if v >= 2 { //nolint:gomnd
+		l |= Debug
+	}
+
+	if v >= 3 { //nolint:gomnd
+		l |= Trace
+	}
+
+	return l
+}

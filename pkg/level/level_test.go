@@ -36,3 +36,23 @@ func TestLevel_String(t *testing.T) {
 		}
 	}
 }
+
+func TestLevel_Verbosity(t *testing.T) {
+	tests := []struct {
+		verbosity int
+		want      Level
+	}{
+		{-1, Error},
+		{0, Error},
+		{1, Error | Info},
+		{2, Error | Info | Debug},
+		{3, All},
+		{4, All},
+	}
+
+	for _, tc := range tests {
+		if got := Verbosity(tc.verbosity); got != tc.want {
+			t.Errorf("incorrect level mapping for verbosity=%d", tc.verbosity)
+		}
+	}
+}
