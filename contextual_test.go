@@ -54,29 +54,30 @@ func TestContextLogger(t *testing.T) {
 	l5 := With(l2)
 	writelogs(l5, "With(key1,empty)")
 
-	want := `
-trace {"label":"default logger","msg":"trace_message"}
-debug {"label":"default logger","msg":"debug_message"}
-info  {"label":"default logger","msg":"info_message"}
-error {"label":"default logger","msg":"error_message"}
-trace {"key1":"value1","label":"With(key1)","msg":"trace_message"}
-debug {"key1":"value1","label":"With(key1)","msg":"debug_message"}
-info  {"key1":"value1","label":"With(key1)","msg":"info_message"}
-error {"key1":"value1","label":"With(key1)","msg":"error_message"}
-trace {"key2":"value2","label":"With(key2)","msg":"trace_message"}
-debug {"key2":"value2","label":"With(key2)","msg":"debug_message"}
-info  {"key2":"value2","label":"With(key2)","msg":"info_message"}
-error {"key2":"value2","label":"With(key2)","msg":"error_message"}
-trace {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"trace_message"}
-debug {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"debug_message"}
-info  {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"info_message"}
-error {"key1":"value1","key3":"value3","label":"With(key1,key3)","msg":"error_message"}
-trace {"key1":"value1","label":"With(key1,empty)","msg":"trace_message"}
-debug {"key1":"value1","label":"With(key1,empty)","msg":"debug_message"}
-info  {"key1":"value1","label":"With(key1,empty)","msg":"info_message"}
-error {"key1":"value1","label":"With(key1,empty)","msg":"error_message"}
+	want := `trace {"msg":"trace_message","label":"default logger"}
+debug {"msg":"debug_message","label":"default logger"}
+info  {"msg":"info_message","label":"default logger"}
+error {"msg":"error_message","label":"default logger"}
+trace {"key1":"value1","msg":"trace_message","label":"With(key1)"}
+debug {"key1":"value1","msg":"debug_message","label":"With(key1)"}
+info  {"key1":"value1","msg":"info_message","label":"With(key1)"}
+error {"key1":"value1","msg":"error_message","label":"With(key1)"}
+trace {"key2":"value2","msg":"trace_message","label":"With(key2)"}
+debug {"key2":"value2","msg":"debug_message","label":"With(key2)"}
+info  {"key2":"value2","msg":"info_message","label":"With(key2)"}
+error {"key2":"value2","msg":"error_message","label":"With(key2)"}
+trace {"key1":"value1","key3":"value3","msg":"trace_message","label":"With(key1,key3)"}
+debug {"key1":"value1","key3":"value3","msg":"debug_message","label":"With(key1,key3)"}
+info  {"key1":"value1","key3":"value3","msg":"info_message","label":"With(key1,key3)"}
+error {"key1":"value1","key3":"value3","msg":"error_message","label":"With(key1,key3)"}
+trace {"key1":"value1","msg":"trace_message","label":"With(key1,empty)"}
+debug {"key1":"value1","msg":"debug_message","label":"With(key1,empty)"}
+info  {"key1":"value1","msg":"info_message","label":"With(key1,empty)"}
+error {"key1":"value1","msg":"error_message","label":"With(key1,empty)"}
 `
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
+		t.Log(got)
+		t.Log(want)
 		t.Errorf("default filter level: got %q, want %q", got, want)
 	}
 }

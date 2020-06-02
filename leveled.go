@@ -17,6 +17,7 @@
 package log
 
 import (
+	"bytes"
 	"encoding"
 	"encoding/json"
 	"fmt"
@@ -124,7 +125,7 @@ func (l *LeveledLogger) Trace(keyvals ...interface{}) {
 
 func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
-	m := make(map[string]interface{}, n)
+	m := make(mapSlice, 0, n)
 
 	for i := 0; i < len(keyvals); i += 2 {
 		k := keyvals[i]
@@ -136,7 +137,8 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 
 		key := fmt.Sprint(k)
 
-		// If v implements json.Marshaler or encoding.TextMarshaler, we give that a priority over fmt.Sprint
+		// If v implements json.Marshaler or encoding.TextMarshaler, we
+		// give that a priority over fmt.Sprint
 		var val interface{}
 		switch v.(type) {
 		case json.Marshaler:
@@ -147,7 +149,7 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 			val = fmt.Sprint(v)
 		}
 
-		m[key] = val
+		m = append(m, mapItem{key: key, value: val})
 	}
 
 	var sb strings.Builder
@@ -160,4 +162,34 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	}
 
 	l.logger.Printf("%-5s %s", lvl, sb.String())
+}
+
+type mapItem struct {
+	key   string
+	value interface{}
+}
+
+type mapSlice []mapItem
+
+func (ms mapSlice) MarshalJSON() ([]byte, error) {
+	buf := &bytes.Buffer{}
+	buf.Write([]byte{'{'})
+
+	for i, mi := range ms {
+		b, err := json.Marshal(&mi.value)
+		if err != nil {
+			return nil, err
+		}
+
+		buf.WriteString(fmt.Sprintf("%q:", fmt.Sprintf("%v", mi.key)))
+		buf.Write(b)
+
+		if i < len(ms)-1 {
+			buf.Write([]byte{','})
+		}
+	}
+
+	buf.Write([]byte{'}'})
+
+	return buf.Bytes(), nil
 }
