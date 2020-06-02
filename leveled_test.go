@@ -101,19 +101,20 @@ func TestLeveledLogger_SetFilterLevel(t *testing.T) {
 	l.SetFilterLevel(level.All)
 	writelogs(l, "SetFilterLevel(All)")
 
-	want := `
-info  {"label":"default filter level","msg":"info_message"}
-error {"label":"default filter level","msg":"error_message"}
-debug {"label":"WithFilterLevel(debug)","msg":"debug_message"}
-info  {"label":"SetFilterLevel(Info)","msg":"info_message"}
-debug {"label":"SetFilterLevel(Info|Debug)","msg":"debug_message"}
-info  {"label":"SetFilterLevel(Info|Debug)","msg":"info_message"}
-trace {"label":"SetFilterLevel(All)","msg":"trace_message"}
-debug {"label":"SetFilterLevel(All)","msg":"debug_message"}
-info  {"label":"SetFilterLevel(All)","msg":"info_message"}
-error {"label":"SetFilterLevel(All)","msg":"error_message"}
+	want := `info  {"msg":"info_message","label":"default filter level"}
+error {"msg":"error_message","label":"default filter level"}
+debug {"msg":"debug_message","label":"WithFilterLevel(debug)"}
+info  {"msg":"info_message","label":"SetFilterLevel(Info)"}
+debug {"msg":"debug_message","label":"SetFilterLevel(Info|Debug)"}
+info  {"msg":"info_message","label":"SetFilterLevel(Info|Debug)"}
+trace {"msg":"trace_message","label":"SetFilterLevel(All)"}
+debug {"msg":"debug_message","label":"SetFilterLevel(All)"}
+info  {"msg":"info_message","label":"SetFilterLevel(All)"}
+error {"msg":"error_message","label":"SetFilterLevel(All)"}
 `
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
+		t.Log(got)
+		t.Log(want)
 		t.Errorf("default filter level: got %q, want %q", got, want)
 	}
 }
@@ -130,15 +131,17 @@ func TestLeveledLogger_log_jsonErrors(t *testing.T) {
 	l.Error("msg", &failingTextMarshaler{})
 	l.Error("msg", &failingJSONMarshaler{})
 
-	want := `
-error {}
+	//nolint: lll // log truth can't be broken into multiple lines
+	want := `error {}
 error {"msg":"missing"}
 error {"msg":"test this"}
-error {"msg":"logging failure","error":"json: error calling MarshalText for type *log.failingTextMarshaler: invalid value"}
-error {"msg":"logging failure","error":"json: error calling MarshalJSON for type *log.failingJSONMarshaler: invalid value"}
+error {"msg":"logging failure","error":"json: error calling MarshalJSON for type log.mapSlice: json: error calling MarshalText for type *log.failingTextMarshaler: invalid value"}
+error {"msg":"logging failure","error":"json: error calling MarshalJSON for type log.mapSlice: json: error calling MarshalJSON for type *log.failingJSONMarshaler: invalid value"}
 `
 
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
+		t.Log(got)
+		t.Log(want)
 		t.Errorf("log_jsonErrors: got %q, want %q", got, want)
 	}
 }
