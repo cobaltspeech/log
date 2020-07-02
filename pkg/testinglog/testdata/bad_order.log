@@ -1,0 +1,3 @@
+trace {"msg":"This is just a trace.","data":"3.14"}
+debug {"msg":"This is a debug msg.","data":"[0 1 2 3]"}
+info  {"msg":"This msg might be useful.","data":"12"}
