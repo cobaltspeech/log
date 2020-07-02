@@ -135,8 +135,8 @@ func TestLeveledLogger_log_jsonErrors(t *testing.T) {
 	want := `error {}
 error {"msg":"missing"}
 error {"msg":"test this"}
-error {"msg":"logging failure","error":"json: error calling MarshalJSON for type log.mapSlice: json: error calling MarshalText for type *log.failingTextMarshaler: invalid value"}
-error {"msg":"logging failure","error":"json: error calling MarshalJSON for type log.mapSlice: json: error calling MarshalJSON for type *log.failingJSONMarshaler: invalid value"}
+error {"msg":"logging failure","error":"json: error calling MarshalJSON for type logmap.MapSlice: json: error calling MarshalText for type *log.failingTextMarshaler: invalid value"}
+error {"msg":"logging failure","error":"json: error calling MarshalJSON for type logmap.MapSlice: json: error calling MarshalJSON for type *log.failingJSONMarshaler: invalid value"}
 `
 
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {

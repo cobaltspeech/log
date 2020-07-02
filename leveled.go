@@ -17,15 +17,12 @@
 package log
 
 import (
-	"bytes"
-	"encoding"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"strings"
 
+	"github.com/cobaltspeech/log/internal/logmap"
 	"github.com/cobaltspeech/log/pkg/level"
 )
 
@@ -124,72 +121,13 @@ func (l *LeveledLogger) Trace(keyvals ...interface{}) {
 }
 
 func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
-	n := (len(keyvals) + 1) / 2 // +1 to handle case when len is odd
-	m := make(mapSlice, 0, n)
+	ms := logmap.FromKeyvals(keyvals...)
 
-	for i := 0; i < len(keyvals); i += 2 {
-		k := keyvals[i]
-
-		var v interface{} = "missing"
-		if i+1 < len(keyvals) {
-			v = keyvals[i+1]
-		}
-
-		key := fmt.Sprint(k)
-
-		// If v implements json.Marshaler or encoding.TextMarshaler, we
-		// give that a priority over fmt.Sprint
-		var val interface{}
-		switch v.(type) {
-		case json.Marshaler:
-			val = v
-		case encoding.TextMarshaler:
-			val = v
-		default:
-			val = fmt.Sprint(v)
-		}
-
-		m = append(m, mapItem{key: key, value: val})
-	}
-
-	var sb strings.Builder
-	enc := json.NewEncoder(&sb)
-	enc.SetEscapeHTML(false)
-
-	if err := enc.Encode(m); err != nil {
+	line, err := ms.JSONString()
+	if err != nil {
 		l.logger.Printf(`%-5s {"msg":"logging failure","error":%q}`, level.Error, err)
 		return
 	}
 
-	l.logger.Printf("%-5s %s", lvl, sb.String())
-}
-
-type mapItem struct {
-	key   string
-	value interface{}
-}
-
-type mapSlice []mapItem
-
-func (ms mapSlice) MarshalJSON() ([]byte, error) {
-	buf := &bytes.Buffer{}
-	buf.Write([]byte{'{'})
-
-	for i, mi := range ms {
-		b, err := json.Marshal(&mi.value)
-		if err != nil {
-			return nil, err
-		}
-
-		buf.WriteString(fmt.Sprintf("%q:", fmt.Sprintf("%v", mi.key)))
-		buf.Write(b)
-
-		if i < len(ms)-1 {
-			buf.Write([]byte{','})
-		}
-	}
-
-	buf.Write([]byte{'}'})
-
-	return buf.Bytes(), nil
+	l.logger.Print(fmt.Sprintf("%-5s %s", lvl, line))
 }
