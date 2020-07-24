@@ -19,6 +19,7 @@ package testinglog
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"strings"
 
 	"github.com/cobaltspeech/log/internal/logmap"
@@ -46,7 +47,8 @@ type Logger struct {
 	failed bool
 
 	// If non-nil, actualFile is where the actual log messages received are written.
-	actualFile *lastMinuteFileWriter
+	actualFile         *lastMinuteFileWriter
+	actualFileOverride bool
 
 	// If non-nil, ignorer is used to choose log message fields whose values should be ignored
 	// during comparison.
@@ -73,9 +75,9 @@ func NewLogger(runner TestRunner, opts ...LoggerOption) (*Logger, error) {
 		}
 	}
 
-	// If the user provided WithActualOutputFile but not WithTruthFile, we want to write to the
-	// actual file even when no failures occur.
-	if !out.truthProvided && out.actualFile != nil {
+	// If the user provided WithActualOutputFile but did not provide WithTruthFile (or the truth
+	// file did not exist), we want to write to the actual file even when no failures occur.
+	if out.actualFile != nil && (!out.truthProvided || out.actualFileOverride) {
 		err := out.actualFile.actuallyWrite()
 		if err != nil {
 			return &out, err
@@ -95,13 +97,27 @@ type LoggerOption func(*Logger) error
 //
 // This function does not handle cases where the logging output order is non-deterministic (e.g. if
 // the function being tested uses multiple goroutines).
+//
+// If the provided file does not exist, the Logger will not expect any log lines.
 func WithTruthFile(file string) LoggerOption {
-	truth, err := ioutil.ReadFile(file)
-	lines := strings.Split(string(truth), "\n")
+	var lines []string
 
-	if lines[len(lines)-1] == "" {
-		// The file had a final newline or was empty, but we don't want to expect an empty line.
-		lines = lines[:len(lines)-1]
+	var actualFileOverride bool
+
+	truth, err := ioutil.ReadFile(file)
+
+	if os.IsNotExist(err) {
+		// We'll pretend it was an empty file, but then we'll be sure to write the actual file if
+		// specified, even if it ends up being empty.
+		err = nil
+		actualFileOverride = true
+	} else {
+		lines = strings.Split(string(truth), "\n")
+
+		if lines[len(lines)-1] == "" {
+			// The file had a final newline or was empty, but we don't want to expect an empty line.
+			lines = lines[:len(lines)-1]
+		}
 	}
 
 	return func(l *Logger) error {
@@ -111,6 +127,7 @@ func WithTruthFile(file string) LoggerOption {
 
 		l.truth = lines
 		l.truthProvided = true
+		l.actualFileOverride = actualFileOverride
 
 		return err
 	}

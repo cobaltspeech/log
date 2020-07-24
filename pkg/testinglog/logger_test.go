@@ -456,18 +456,35 @@ func TestWithTruthFile_panic(t *testing.T) {
 
 const nilStr = "<nil>"
 
-func TestWithTruthFile_error(t *testing.T) {
-	hyp := "open testdata/nonexistent.log: no such file or directory"
-	_, exp := NewLogger(nil, WithTruthFile(filepath.Join("testdata", "nonexistent.log")))
+func TestWithTruthFile_noexist(t *testing.T) {
+	truthFile := filepath.Join("testdata", "nonexistent.log")
+	logger, err := NewLogger(nil, WithTruthFile(truthFile), WithActualOutputFile(truthFile+".generated"))
 
-	expStr := nilStr
-	if exp != nil {
-		expStr = exp.Error()
+	errStr := nilStr
+	if err != nil {
+		errStr = err.Error()
 	}
 
-	diff := cmp.Diff(hyp, expStr)
+	diff := cmp.Diff(nilStr, errStr)
 	if diff != "" {
-		t.Errorf("err differed from expected (-want, +got):\n%s", diff)
+		t.Errorf("err differed from expected (-want +got):\n%s", diff)
+	}
+
+	logger.Done()
+
+	b, err := ioutil.ReadFile(truthFile + ".generated")
+	if err != nil {
+		t.Errorf("error trying to read generated file: %v", err)
+	}
+
+	diff = cmp.Diff("", string(b))
+	if diff != "" {
+		t.Errorf("generated file differed from expected (-want +got):\n%s", diff)
+	}
+
+	err = os.Remove(truthFile + ".generated")
+	if err != nil {
+		t.Fatalf("failed to remove generated file: %v", err)
 	}
 }
 
