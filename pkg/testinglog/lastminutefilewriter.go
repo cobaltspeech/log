@@ -20,11 +20,13 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
 // lastMinuteFileWriter caches writes until ActuallyWrite is called. It only creates a file at the
-// specified path when it begins to actually write.
+// specified path when it begins to actually write. It also creates the directory containing the
+// specified path at that point.
 type lastMinuteFileWriter struct {
 	path string
 
@@ -58,7 +60,10 @@ func (fw *lastMinuteFileWriter) actuallyWrite() error {
 		return nil
 	}
 
-	var err error
+	err := os.MkdirAll(filepath.Dir(fw.path), os.ModePerm)
+	if err != nil {
+		return err
+	}
 
 	fw.f, err = os.Create(fw.path)
 	if err != nil {
