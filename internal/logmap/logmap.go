@@ -76,8 +76,6 @@ type MapSlice []MapItem
 
 // UnmarshalJSON adds entries from the JSON object to the MapSlice.
 func (ms *MapSlice) UnmarshalJSON(b []byte) error {
-	indexCounter = 0
-
 	m := map[string]IndexedMapValue{}
 	if err := json.Unmarshal(b, &m); err != nil {
 		return err
