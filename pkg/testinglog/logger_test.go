@@ -240,10 +240,11 @@ func ExampleWithFieldIgnoreFunc() {
 	}
 
 	// This is not deterministic.
-	id := strconv.Itoa(rand.Intn(10000000)) //nolint: gosec // We don't need security.
+	id := strconv.Itoa(rand.Intn(10000000)) //nolint: gosec // We don't need security for this test.
 
 	logger.Trace("msg", "An ID was generated.", "id", id)
 	logger.Debug("msg", "This ID is deterministic.", "id", 12) // doesn't match hyp
+	logger.Error("msg", "This is unexpected.")                 // extra
 
 	logger.Done()
 
@@ -255,6 +256,12 @@ func ExampleWithFieldIgnoreFunc() {
 	//   string(
 	// - 	`debug {"msg":"This ID is deterministic.","id":"42"}`,
 	// + 	`debug {"msg":"This ID is deterministic.","id":"12"}`,
+	//   )
+	// error {"msg":"This is unexpected."}
+	// unexpected log message (-want +got):
+	//   string(
+	// - 	"",
+	// + 	`error {"msg":"This is unexpected."}`,
 	//   )
 }
 
