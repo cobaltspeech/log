@@ -270,6 +270,11 @@ func (l *Logger) cmp(hyp, exp string, expLvl level.Level, expMap logmap.MapSlice
 		return hyp == exp
 	}
 
+	if hyp == "" {
+		// We weren't expecting a log message, so this log line is definitely wrong.
+		return false
+	}
+
 	var hypMap logmap.MapSlice
 
 	err := hypMap.UnmarshalJSON([]byte(hyp[6:])) // Skip the log level.
