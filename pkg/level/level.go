@@ -49,7 +49,7 @@ func (l Level) String() string {
 func Verbosity(v int) Level {
 	l := Error
 
-	if v >= 1 { //nolint:gomnd
+	if v >= 1 {
 		l |= Info
 	}
 
