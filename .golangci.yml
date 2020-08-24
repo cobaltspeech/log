@@ -69,6 +69,7 @@ linters:
     - lll
     - misspell
     - nakedret
+    - nolintlint
     - rowserrcheck
     - scopelint
     - staticcheck
@@ -80,7 +81,7 @@ linters:
     - unused
     - varcheck
     - wsl
-    
+
   # don't enable:
   # - gochecknoglobals
   # - gocognit

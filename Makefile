@@ -4,7 +4,7 @@
 BINDIR := ./tmp/bin
 
 LINTER := $(BINDIR)/golangci-lint
-LINTER_VERSION := 1.23.8
+LINTER_VERSION := 1.30.0
 
 # Linux vs Darwin detection for the machine on which the build is taking place (not to be used for the build target)
 DEV_OS := $(shell uname -s | tr A-Z a-z)

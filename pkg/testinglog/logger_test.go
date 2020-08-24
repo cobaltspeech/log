@@ -240,7 +240,7 @@ func ExampleWithFieldIgnoreFunc() {
 	}
 
 	// This is not deterministic.
-	id := strconv.Itoa(rand.Intn(10000000))
+	id := strconv.Itoa(rand.Intn(10000000)) //nolint: gosec // We don't need security.
 
 	logger.Trace("msg", "An ID was generated.", "id", id)
 	logger.Debug("msg", "This ID is deterministic.", "id", 12) // doesn't match hyp
