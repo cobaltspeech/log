@@ -20,7 +20,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
+	"testing"
 
 	"github.com/cobaltspeech/log/internal/logmap"
 	"github.com/cobaltspeech/log/pkg/level"
@@ -85,6 +87,25 @@ func NewLogger(runner TestRunner, opts ...LoggerOption) (*Logger, error) {
 	}
 
 	return &out, nil
+}
+
+// NewConvenientLogger creates a Logger using tb as the TestRunner. Any error while creating the
+// logger results in a call to tb.Fatalf. The logger will use testdata/t.Name()/test.log as its
+// truth file, and testdata/t.Name()/test.log.generated will contain the actual output when it
+// differs from the truth file.
+func NewConvenientLogger(tb testing.TB, opts ...LoggerOption) *Logger {
+	logFile := filepath.Join("testdata", tb.Name(), "test.log")
+
+	logger, err := NewLogger(tb, append(opts,
+		WithTruthFile(logFile),
+		WithActualOutputFile(logFile+".generated"),
+	)...)
+
+	if err != nil {
+		tb.Fatalf("create testing logger: %v", err)
+	}
+
+	return logger
 }
 
 type LoggerOption func(*Logger) error
@@ -166,6 +187,29 @@ func WithFieldIgnoreFunc(ignorer FieldIgnoreFunc) LoggerOption {
 		l.ignorer = ignorer
 		return nil
 	}
+}
+
+// WithIgnoredFields is a convenience function that uses WithFieldIgnoreFunc to cause the logger to
+// ignore the fields in the map corresponding to the "msg" value in each log line. That is, the
+// following line creates a LoggerOption that ignores the "devices" field whenever the "msg" field
+// is "Devices found.":
+//
+// 	WithIgnoredFields(map[string][]string{"Devices found.": {"devices"}})
+func WithIgnoredFields(ignoreList map[string][]string) LoggerOption {
+	return WithFieldIgnoreFunc(func(fields map[string]string) []string {
+		msg, ok := fields["msg"]
+		if !ok {
+			return nil
+		}
+
+		for message, list := range ignoreList {
+			if msg == message {
+				return list
+			}
+		}
+
+		return nil
+	})
 }
 
 // Error checks whether the Logger expected an error log line next. If not, it's reported to the
