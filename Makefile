@@ -34,7 +34,7 @@ lint-check: $(LINTER)
 # Run tests
 .PHONY: test
 test:
-	go test -cover ./...
+	go test -race -cover ./...
 
 # Nothing to build
 .PHONY: build
