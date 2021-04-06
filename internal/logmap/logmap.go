@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync/atomic"
 )
 
 // FromKeyvals creates an ordered map containing the keys and values of the log message. The keys
@@ -105,8 +106,7 @@ func (ms *MapSlice) UnmarshalJSON(b []byte) error {
 var indexCounter uint64
 
 func nextIndex() uint64 {
-	indexCounter++
-	return indexCounter
+	return atomic.AddUint64(&indexCounter, 1)
 }
 
 // UnmarshalJSON for an indexed map item. Used for sorting the resulting MapSlice.
