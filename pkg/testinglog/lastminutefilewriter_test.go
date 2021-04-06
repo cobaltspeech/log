@@ -70,6 +70,7 @@ func TestLastMinuteFileWriter_concurrent(t *testing.T) {
 	for _, line := range readLines(t, tempFile) {
 		if !strings.HasPrefix(line, "this is line ") {
 			t.Errorf(`found unexpected line "%s"`, line)
+
 			continue
 		}
 
@@ -78,11 +79,13 @@ func TestLastMinuteFileWriter_concurrent(t *testing.T) {
 		val, err = strconv.Atoi(line[len("this is line "):])
 		if err != nil {
 			t.Errorf(`found unexpected line "%s": %v`, line, err)
+
 			continue
 		}
 
 		if _, ok := found[val]; ok {
 			t.Errorf(`found duplicate line "%s"`, line)
+
 			continue
 		}
 
@@ -97,6 +100,8 @@ func TestLastMinuteFileWriter_concurrent(t *testing.T) {
 }
 
 func makeTempFile(t *testing.T) string {
+	t.Helper()
+
 	f, err := ioutil.TempFile("", "")
 	if err != nil {
 		t.Fatalf("failed to create temp file: %v", err)
@@ -113,6 +118,8 @@ func makeTempFile(t *testing.T) string {
 }
 
 func readLines(t *testing.T, file string) []string {
+	t.Helper()
+
 	b, err := ioutil.ReadFile(file)
 	if err != nil {
 		t.Fatalf("error reading file: %v", err)

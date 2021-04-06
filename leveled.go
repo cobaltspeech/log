@@ -126,6 +126,7 @@ func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
 	line, err := ms.JSONString()
 	if err != nil {
 		l.logger.Printf(`%-5s {"msg":"logging failure","error":%q}`, level.Error, err)
+
 		return
 	}
 

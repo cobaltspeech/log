@@ -38,7 +38,8 @@ type lastMinuteFileWriter struct {
 }
 
 func newLastMinuteFileWriter(file string) *lastMinuteFileWriter {
-	b := bytes.Buffer{}
+	var b bytes.Buffer
+
 	return &lastMinuteFileWriter{path: file, w: &b, b: &b}
 }
 

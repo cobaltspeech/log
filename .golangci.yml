@@ -1,6 +1,8 @@
 linters-settings:
   dupl:
     threshold: 100
+  exhaustive:
+    default-signifies-exhaustive: true
   funlen:
     lines: 100
     statements: 50
@@ -33,6 +35,9 @@ linters-settings:
         checks: argument,case,condition,return
   govet:
     check-shadowing: true
+    enable-all: true
+    disable:
+      - fieldalignment
   lll:
     line-length: 140
   maligned:
@@ -45,49 +50,81 @@ linters:
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
   disable-all: true
   enable:
+    - asciicheck
     - bodyclose
     - deadcode
     - depguard
     - dogsled
     - dupl
+    - durationcheck
     - errcheck
+    - exhaustive
+    - exportloopref
     - funlen
+    - gci
     - gochecknoinits
     - goconst
     - gocritic
     - gocyclo
+    - goerr113
     - gofmt
+    - gofumpt
     - goimports
     - golint
     - gomnd
+    - gomoddirectives
     - goprintffuncname
     - gosec
     - gosimple
     - govet
+    - ifshort
     - ineffassign
-    - interfacer
     - lll
+    - makezero
     - misspell
     - nakedret
+    - nestif
+    - nilerr
+    - nlreturn
     - nolintlint
-    - rowserrcheck
-    - scopelint
+    - prealloc
+    - predeclared
+    - revive
     - staticcheck
     - structcheck
     - stylecheck
+    - thelper
+    - tparallel
     - typecheck
     - unconvert
     - unparam
     - unused
     - varcheck
+    - wastedassign
+    - whitespace
     - wsl
 
-  # don't enable:
+  # not enabled:
+  # - cyclop
+  # - exhaustivestruct
+  # - forbidigo
+  # - forcetypeassert
   # - gochecknoglobals
   # - gocognit
+  # - godot
   # - godox
+  # - goheader
+  # - gomodguard
+  # - importas
+  # - interfacer
   # - maligned
-  # - prealloc
+  # - noctx
+  # - paralleltest
+  # - rowserrcheck
+  # - scopelint
+  # - sqlclosecheck
+  # - testpackage
+  # - wrapcheck
 
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source

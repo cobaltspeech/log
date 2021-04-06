@@ -24,10 +24,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/cobaltspeech/log/internal/logmap"
 	"github.com/cobaltspeech/log/pkg/level"
-
-	"github.com/google/go-cmp/cmp"
 )
 
 // Logger logs messages to a test runner, and can optionally report differences between log messages
@@ -94,13 +94,14 @@ func NewLogger(runner TestRunner, opts ...LoggerOption) (*Logger, error) {
 // truth file, and testdata/t.Name()/test.log.generated will contain the actual output when it
 // differs from the truth file.
 func NewConvenientLogger(tb testing.TB, opts ...LoggerOption) *Logger {
+	tb.Helper()
+
 	logFile := filepath.Join("testdata", tb.Name(), "test.log")
 
 	logger, err := NewLogger(tb, append(opts,
 		WithTruthFile(logFile),
 		WithActualOutputFile(logFile+".generated"),
 	)...)
-
 	if err != nil {
 		tb.Fatalf("create testing logger: %v", err)
 	}
@@ -160,6 +161,7 @@ func WithTruthFile(file string) LoggerOption {
 func WithActualOutputFile(file string) LoggerOption {
 	return func(l *Logger) error {
 		l.actualFile = newLastMinuteFileWriter(file)
+
 		return nil
 	}
 }
@@ -169,6 +171,7 @@ func WithActualOutputFile(file string) LoggerOption {
 func WithoutFailure() LoggerOption {
 	return func(l *Logger) error {
 		l.doFail = false
+
 		return nil
 	}
 }
@@ -185,6 +188,7 @@ type FieldIgnoreFunc func(fields map[string]string) []string
 func WithFieldIgnoreFunc(ignorer FieldIgnoreFunc) LoggerOption {
 	return func(l *Logger) error {
 		l.ignorer = ignorer
+
 		return nil
 	}
 }
@@ -240,6 +244,7 @@ func (l *Logger) Trace(keyvals ...interface{}) {
 func (l *Logger) log(args ...interface{}) {
 	if l.actualFile == nil {
 		l.runner.Log(args...)
+
 		return
 	}
 
