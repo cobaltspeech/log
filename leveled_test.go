@@ -19,7 +19,7 @@ package log
 import (
 	"bufio"
 	"bytes"
-	"fmt"
+	"errors"
 	"log"
 	"os"
 	"regexp"
@@ -52,6 +52,8 @@ func TestLeveledLogger_WithOutput(t *testing.T) {
 }
 
 func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
+	t.Helper()
+
 	l.Error("msg", "test_message")
 
 	wantJSON := `{"msg":"test_message"}`
@@ -60,7 +62,6 @@ func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
 	pattern := "^" + rDate + " " + rTime + " error " + wantJSON + "\n"
 
 	matched, err := regexp.Match(pattern, b.Bytes())
-
 	if err != nil {
 		t.Fatalf("pattern %q did not compile: %s", pattern, err)
 	}
@@ -188,12 +189,14 @@ func TestLeveledLogger_Concurrent(t *testing.T) {
 type failingTextMarshaler struct{}
 
 func (v *failingTextMarshaler) MarshalText() ([]byte, error) {
-	return nil, fmt.Errorf("invalid value")
+	return nil, errInvalidValue
 }
 
 // failingJSONMarshaler implements json.Marshaler that fails
 type failingJSONMarshaler struct{}
 
 func (v *failingJSONMarshaler) MarshalJSON() ([]byte, error) {
-	return nil, fmt.Errorf("invalid value")
+	return nil, errInvalidValue
 }
+
+var errInvalidValue = errors.New("invalid value")

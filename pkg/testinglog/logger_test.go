@@ -26,9 +26,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/cobaltspeech/log/pkg/level"
-
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/cobaltspeech/log/pkg/level"
 )
 
 // writeTemporaryFile is used by some of the examples to provide a short way to create a file
@@ -72,6 +72,7 @@ func ExampleWithTruthFile() {
 	}, "\n"))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -82,6 +83,7 @@ func ExampleWithTruthFile() {
 	logger, err := NewLogger(&runner, WithTruthFile(hypFile))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -117,6 +119,7 @@ func ExampleWithActualOutputFile() {
 	}, "\n"))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -128,6 +131,7 @@ func ExampleWithActualOutputFile() {
 
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -138,6 +142,7 @@ func ExampleWithActualOutputFile() {
 	logger, err := NewLogger(&runner, WithTruthFile(hypFile), WithActualOutputFile(actualFile))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -153,6 +158,7 @@ func ExampleWithActualOutputFile() {
 
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -183,6 +189,7 @@ func ExampleWithoutFailure() {
 	}, "\n"))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -193,6 +200,7 @@ func ExampleWithoutFailure() {
 	logger, err := NewLogger(&runner, WithTruthFile(hypFile), WithoutFailure())
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -215,6 +223,7 @@ func ExampleWithFieldIgnoreFunc() {
 	}, "\n"))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -236,6 +245,7 @@ func ExampleWithFieldIgnoreFunc() {
 	logger, err := NewLogger(&runner, WithTruthFile(hypFile), WithFieldIgnoreFunc(ignorer))
 	if err != nil {
 		fmt.Println(err)
+
 		return
 	}
 
@@ -415,6 +425,8 @@ func writeLogMsgs(logger *Logger, msgs []testingLogMsg) {
 }
 
 func (r *fakeRunner) compareOutput(t *testing.T, hyp string, expectFail bool) {
+	t.Helper()
+
 	exp := r.b.String()
 	expLines := strings.Split(exp, "\n")
 	hypLines := strings.Split(hyp, "\n")
@@ -498,7 +510,6 @@ func TestWithTruthFile_noexist(t *testing.T) {
 func TestWithActualOutputFile_noTruth(t *testing.T) {
 	// Get a file we can use for the actual log output.
 	actualFile, remove, err := writeTemporaryFile("")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -572,7 +583,6 @@ func TestWithActualOutputFile_withTruthMatch(t *testing.T) {
 func TestWithActualOutputFile_withTruthNoMatch(t *testing.T) {
 	// Get a file we can use for the actual log output.
 	actualFile, remove, err := writeTemporaryFile("")
-
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -691,6 +701,8 @@ func TestWithActualOutputFile_errorOnDoneWithTruth(t *testing.T) {
 }
 
 func TestWithFieldIgnorer(t *testing.T) { // nolint: funlen // Tests are just long.
+	t.Parallel()
+
 	dataIgnorer := func(fields map[string]string) []string {
 		msg, ok := fields["msg"]
 
@@ -781,7 +793,6 @@ func TestWithFieldIgnorer(t *testing.T) { // nolint: funlen // Tests are just lo
 				WithTruthFile(filepath.Join("testdata", tc.expect)),
 				WithFieldIgnoreFunc(tc.ignorer),
 			)
-
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -87,7 +87,7 @@ func (ms *MapSlice) UnmarshalJSON(b []byte) error {
 		index uint64
 	}
 
-	var sorted []indexedEntry
+	sorted := make([]indexedEntry, 0, len(m))
 	for k, v := range m {
 		sorted = append(sorted, indexedEntry{MapItem{Key: k, Value: v.Value}, v.Index})
 	}

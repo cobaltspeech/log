@@ -17,6 +17,7 @@
 package logmap
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -25,6 +26,8 @@ import (
 )
 
 func TestFromKeyvals(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		in  []interface{}
 		out MapSlice
@@ -71,6 +74,8 @@ func TestFromKeyvals(t *testing.T) {
 const nilStr = "<nil>"
 
 func TestMapSlice_UnmarshalJSON(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		starting MapSlice
 		in       string
@@ -141,6 +146,8 @@ func TestMapSlice_UnmarshalJSON(t *testing.T) {
 }
 
 func TestMapSlice_String(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		starting MapSlice
 		out      string
@@ -199,6 +206,8 @@ func TestMapSlice_String(t *testing.T) {
 }
 
 func TestMapSlice_ToStringMap(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		in  MapSlice
 		out map[string]string
@@ -237,6 +246,8 @@ func TestMapSlice_ToStringMap(t *testing.T) {
 }
 
 func TestMapSlice_StringFromValue_panic(t *testing.T) {
+	t.Parallel()
+
 	tests := map[string]struct {
 		in    interface{}
 		panic interface{}
@@ -306,7 +317,7 @@ func newFailingTextMarshaler() *failingTextMarshaler {
 }
 
 func (f *failingTextMarshaler) MarshalText() ([]byte, error) {
-	return nil, fmt.Errorf("this error is on purpose")
+	return nil, errOnPurpose
 }
 
 type failingJSONMarshaler testJSONMarshaler
@@ -316,5 +327,7 @@ func newFailingJSONMarshaler() *failingJSONMarshaler {
 }
 
 func (f *failingJSONMarshaler) MarshalJSON() ([]byte, error) {
-	return nil, fmt.Errorf("this error is on purpose")
+	return nil, errOnPurpose
 }
+
+var errOnPurpose = errors.New("this error is on purpose")
