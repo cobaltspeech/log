@@ -1,4 +1,4 @@
-# Copyright (2020) Cobalt Speech and Language Inc.
+# Copyright (2021) Cobalt Speech and Language Inc.
 
 # Needed tools are installed to BINDIR.
 BINDIR := ./tmp/bin
