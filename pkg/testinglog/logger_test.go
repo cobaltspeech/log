@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -454,6 +455,34 @@ func (r *fakeRunner) compareOutput(t *testing.T, hyp string, expectFail bool) {
 	if diff != "" {
 		t.Errorf("failure mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestWithTruthFile_concurrent(t *testing.T) {
+	runner := fakeRunner{}
+
+	logger, err := NewLogger(&runner, WithTruthFile(filepath.Join("testdata", "concurrent.log")))
+	if err != nil {
+		t.Fatalf("create logger: %v", err)
+	}
+
+	var wg sync.WaitGroup
+
+	wg.Add(3)
+
+	for i := 0; i < 3; i++ {
+		go func() {
+			logger.Info("msg", "This is a concurrent message.")
+			wg.Done()
+		}()
+	}
+
+	wg.Wait()
+	logger.Done()
+
+	runner.compareOutput(t, `info  {"msg":"This is a concurrent message."}
+info  {"msg":"This is a concurrent message."}
+info  {"msg":"This is a concurrent message."}
+`, false)
 }
 
 func TestWithTruthFile_panic(t *testing.T) {

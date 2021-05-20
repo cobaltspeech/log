@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -36,6 +37,10 @@ type Logger struct {
 	// runner has its Log method called in order to report log messages if actualWriter is nil, and
 	// its Fail method is called at every unexpected log if doFail is true.
 	runner TestRunner
+
+	// The LeveledLogger allows for concurrent logging by wrapping a log.Logger from the stdlib,
+	// which in turn uses a sync.Mutex to synchronize writes. We provide similar behavior here.
+	mu sync.Mutex
 
 	// truth contains the expected log messages.
 	truth         []string
@@ -272,6 +277,9 @@ func (l *Logger) compare(lvl level.Level, keyvals ...interface{}) {
 
 	exp = fmt.Sprintf("%-5s %s", lvl, exp)
 
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	// Log it to either the logWriter or the runner.
 	l.log(exp)
 
@@ -397,6 +405,9 @@ func (l *Logger) Done() {
 	if !l.doFail {
 		return
 	}
+
+	l.mu.Lock()
+	defer l.mu.Unlock()
 
 	if l.cur < len(l.truth) {
 		// We're missing some log messages that we expected.
