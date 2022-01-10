@@ -56,3 +56,29 @@ func TestLevel_Verbosity(t *testing.T) {
 		}
 	}
 }
+
+func TestLevel_FromString(t *testing.T) {
+	tests := []struct {
+		str  string
+		want Level
+	}{
+		{Trace.String(), Trace},
+		{Debug.String(), Debug},
+		{Info.String(), Info},
+		{Error.String(), Error},
+		{Default.String(), Default},
+		{All.String(), All},
+		{None.String(), None},
+		{"unknown ", None},
+		{"info  ", Info},
+		{"  info  ", Info},
+		{"INFO", Info},
+		{"info level", None},
+	}
+
+	for _, tc := range tests {
+		if got := FromString(tc.str); got != tc.want {
+			t.Errorf("incorrect level mapping for string=%q", tc.str)
+		}
+	}
+}
