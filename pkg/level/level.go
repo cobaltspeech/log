@@ -17,6 +17,8 @@
 // Package level defines the supported logging levels
 package level
 
+import "strings"
+
 // Level enumerates different logging levels.
 type Level byte
 
@@ -35,10 +37,13 @@ const (
 
 // levelCodes provides a string representation of different supported levels.
 var levelCodes = map[Level]string{
-	Trace: "trace",
-	Debug: "debug",
-	Info:  "info",
-	Error: "error",
+	Trace:   "trace",
+	Debug:   "debug",
+	Info:    "info",
+	Error:   "error",
+	All:     "all",
+	Default: "default",
+	None:    "none",
 }
 
 func (l Level) String() string {
@@ -64,4 +69,18 @@ func Verbosity(v int) Level {
 	}
 
 	return l
+}
+
+// FromString converts the given string label to the appropriate Level. If the
+// string does not map to a valid logging level, `None` is returned.
+func FromString(s string) Level {
+	s = strings.ToLower(strings.TrimSpace(s))
+
+	for level, levelStr := range levelCodes {
+		if levelStr == s {
+			return level
+		}
+	}
+
+	return None
 }
