@@ -56,6 +56,11 @@ func (fw *lastMinuteFileWriter) actuallyWrite() error {
 	fw.lock.Lock()
 	defer fw.lock.Unlock()
 
+	if fw.path == "" {
+		// No actual file path was specified.
+		return nil
+	}
+
 	if fw.f != nil {
 		// We already called actuallyWrite.
 		return nil
