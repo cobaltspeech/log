@@ -127,16 +127,20 @@ func NewConvenientLogger(tb testing.TB, opts ...LoggerOption) *Logger {
 
 type LoggerOption func(*Logger) error
 
-// WithTruthFile sets the Logger to compare each log message with the log text in the provided file.
-// Each expected log line should be separated from the next by a newline. If there are any
-// differences between expected and received log lines, they are reported to the test runner and the
-// runner's Fail method will be called when Done is called (unless WithoutFailure is used in
+// WithTruthFile sets the Logger to compare each log message with the log text
+// in the provided file. Each expected log line should be separated from the
+// next by a newline. If there are any differences between expected and received
+// log lines, they are reported to the test runner and the runner's Fail method
+// will be called when Done is called (unless WithoutFailure is used in
 // conjunction with this option).
 //
-// This function does not handle cases where the logging output order is non-deterministic (e.g. if
-// the function being tested uses multiple goroutines).
+// If the logging output order is non-deterministic (e.g. if the function being
+// tested uses multiple goroutines), the WithIgnoreOrder() option can be used
+// along with this option to handle such cases.
 //
-// If the provided file does not exist, the Logger will not expect any log lines.
+//
+// If the provided file does not exist, the Logger will not expect any log
+// lines.
 func WithTruthFile(file string) LoggerOption {
 	var lines []string
 
