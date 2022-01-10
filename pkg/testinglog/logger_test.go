@@ -833,3 +833,137 @@ func TestWithFieldIgnorer(t *testing.T) { // nolint: funlen // Tests are just lo
 		})
 	}
 }
+
+// TestWithIgnoreOrder checks whether tests:
+// 	- can pass when WithIgnoreOrder option is enabled and logs are not received
+//    in the same order as in the truth file.
+//
+// 	- fail when WithIgnoreOrder option is not enabled and logs are not received
+//    in the same order as in the truth file.
+//
+// 	- can pass when WithIgnoreOrder option is enabled and but no truth file is
+//    provided.
+func TestWithIgnoreOrder(t *testing.T) {
+	t.Parallel()
+
+	truthLogs := []testingLogMsg{
+		{level.Trace, []interface{}{"msg", "trace message", "order", "0"}},
+		{level.Debug, []interface{}{"msg", "debug message", "order", "1"}},
+		{level.Info, []interface{}{"msg", "info message", "order", "2"}},
+		{level.Error, []interface{}{"msg", "error message", "order", "3"}},
+	}
+
+	truthLogsStr := []string{
+		`trace {"msg":"trace message","order":"0"}`,
+		`debug {"msg":"debug message","order":"1"}`,
+		`info  {"msg":"info message","order":"2"}`,
+		`error {"msg":"error message","order":"3"}`,
+	}
+
+	// Write truth file.
+	truthFile, remove, err := writeTemporaryFile(strings.Join(truthLogsStr, "\n"))
+	if err != nil {
+		t.Fatalf("failed to create temporary truth file, err=%v", err)
+	}
+
+	t.Cleanup(remove)
+
+	testCases := []struct {
+		name              string
+		order             []int
+		overrideLog       map[int]testingLogMsg
+		passOrdered       bool
+		passIgnoringOrder bool
+	}{
+		{
+			name: "original order", order: []int{0, 1, 2, 3}, passOrdered: true, passIgnoringOrder: true,
+		},
+		{
+			name: "shift order by 1", order: []int{1, 2, 3, 0}, passIgnoringOrder: true,
+		},
+		{
+			name: "shift order by 2", order: []int{2, 3, 0, 1}, passIgnoringOrder: true,
+		},
+		{
+			name: "shift order by 3", order: []int{3, 0, 1, 2}, passIgnoringOrder: true,
+		},
+		{
+			name: "missing logging message", order: []int{0, 1, 2},
+		},
+		{
+			name: "shift order by 2 and missing logging message", order: []int{2, 3, 0},
+		},
+		{
+			name:        "extra logging message",
+			order:       []int{0, 1, 2, 3},
+			overrideLog: map[int]testingLogMsg{4: {level.Info, []interface{}{"msg", "extra message", "order", "4"}}},
+		},
+		{
+			name:        "different logging message",
+			order:       []int{0, 1, 2, 3},
+			overrideLog: map[int]testingLogMsg{0: {level.Info, []interface{}{"msg", "trace message", "order", "4"}}},
+		},
+	}
+
+	loggerOptsToTest := map[string][]LoggerOption{
+		"with no truth file":      {},
+		"with not ignoring order": {WithTruthFile(truthFile)},
+		"with ignoring order":     {WithTruthFile(truthFile), WithIgnoreOrder()},
+	}
+
+	for _, tc := range testCases {
+		for optName := range loggerOptsToTest {
+			opts := loggerOptsToTest[optName]
+
+			t.Run(tc.name+"_"+optName, func(subT *testing.T) {
+				subT.Parallel()
+
+				msgs := make([]testingLogMsg, 0)
+				for _, ldx := range tc.order {
+					msgs = append(msgs, truthLogs[ldx])
+				}
+
+				for ldx, override := range tc.overrideLog {
+					if ldx < len(msgs) {
+						msgs[ldx] = override
+					} else {
+						msgs = append(msgs, override)
+					}
+				}
+
+				subTestWithIgnoreOrder(subT, opts, msgs, tc.passIgnoringOrder, tc.passOrdered)
+			})
+		}
+	}
+}
+
+func subTestWithIgnoreOrder(
+	t *testing.T, opts []LoggerOption, msgs []testingLogMsg, passIgnoringOrder, passOrdered bool,
+) {
+	t.Helper()
+
+	runner := fakeRunner{}
+
+	logger, err := NewLogger(&runner, opts...)
+	if err != nil {
+		t.Fatalf("failed to create logger using WithIgnoreOrder option, err=%v", err)
+	}
+
+	writeLogMsgs(logger, msgs)
+
+	logger.Done()
+
+	shouldPass := !logger.truthProvided || (logger.ignoreOrder && passIgnoringOrder) || (!logger.ignoreOrder && passOrdered)
+
+	if !shouldPass && !runner.failed {
+		t.Errorf(
+			"expected to fail but didn't, diff:\n%s", runner.b.String(),
+		)
+	}
+
+	if shouldPass && runner.failed {
+		t.Errorf(
+			"expected to pass  but didn't, diff:\n%s", runner.b.String(),
+		)
+	}
+}

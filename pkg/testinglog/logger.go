@@ -21,6 +21,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -46,6 +47,7 @@ type Logger struct {
 	truth         []string
 	cur           int
 	truthProvided bool
+	ignoreOrder   bool
 
 	// doFail is whether a discrepancy in log messages implies a call to runner.Fail.
 	doFail bool
@@ -87,6 +89,15 @@ func NewLogger(runner TestRunner, opts ...LoggerOption) (*Logger, error) {
 	if out.actualFile != nil && (!out.truthProvided || out.actualFileOverride) {
 		err := out.actualFile.actuallyWrite()
 		if err != nil {
+			return &out, err
+		}
+	}
+
+	// In order for WithIgnoreOrder() to work, we need an actual output writer.
+	// If one hasn't been created, we create one that writes only to a memory
+	// buffer.
+	if out.actualFile == nil && out.ignoreOrder {
+		if err := WithActualOutputFile("")(&out); err != nil {
 			return &out, err
 		}
 	}
@@ -176,6 +187,20 @@ func WithActualOutputFile(file string) LoggerOption {
 func WithoutFailure() LoggerOption {
 	return func(l *Logger) error {
 		l.doFail = false
+
+		return nil
+	}
+}
+
+// WithIgnoreOrder sets the Logger to not compare each logging call as it is
+// made. Instead it will compare the truth file with the actual logging outputs
+// at the end when Done() is called. Both the actual logs and truth logs will be
+// sorted to ignore any differences in the order the logs were obtained. This is
+// useful for working around concurrent logging calls which may happen in a
+// different order than in the truth file, but are nonetheless correct.
+func WithIgnoreOrder() LoggerOption {
+	return func(l *Logger) error {
+		l.ignoreOrder = true
 
 		return nil
 	}
@@ -283,7 +308,7 @@ func (l *Logger) compare(lvl level.Level, keyvals ...interface{}) {
 	// Log it to either the logWriter or the runner.
 	l.log(exp)
 
-	if !l.truthProvided {
+	if !l.truthProvided || l.ignoreOrder {
 		return
 	}
 
@@ -309,6 +334,62 @@ func (l *Logger) compare(lvl level.Level, keyvals ...interface{}) {
 	}
 
 	l.cur++
+}
+
+// compareFinalSortedLogs checks the given truth log file with the actual log
+// file and reports any differences to l.runner. Both truth and actual logs are
+// sorted to ignore any differences in the order the logs were obtained. This is
+// useful for working around concurrent logging calls which may happen in a
+// different order than in the truth file, but are nonetheless correct.
+func (l *Logger) compareFinalSortedLogs() {
+	// Return if missing truth logs.
+	if !l.truthProvided {
+		return
+	}
+
+	// Making a copy of truth logs since we sort them below.
+	truthLogs := make([]string, len(l.truth))
+	copy(truthLogs, l.truth)
+
+	// Getting actual logs and filtering a final newline.
+	actualLogs := strings.Split(l.actualFile.b.String(), "\n")
+	if actualLogs[len(actualLogs)-1] == "" {
+		actualLogs = actualLogs[:len(actualLogs)-1]
+	}
+
+	sort.Strings(truthLogs)
+	sort.Strings(actualLogs)
+
+	// We have missing or extra log lines. Fail and print diff
+	if len(truthLogs) != len(actualLogs) {
+		diff := replaceNbsp(cmp.Diff(truthLogs, actualLogs))
+		l.runner.Log("unexpected number of log messages (-want +got):\n", diff)
+		l.failed = true
+
+		return
+	}
+
+	// Check if the log lines are equivalent.
+	for i := 0; i < len(actualLogs); i++ {
+		want := truthLogs[i]
+		got := actualLogs[i]
+
+		// Getting level for the actual log message.
+		gotLvl := level.FromString(got[:6])
+
+		// Getting key-val pairs in log message. Skipping level info.
+		var gotMap logmap.MapSlice
+		if err := gotMap.UnmarshalJSON([]byte(got[6:])); err != nil {
+			panic(err)
+		}
+
+		if !l.cmp(want, got, gotLvl, gotMap) {
+			// Log the failure and the diff to the runner.
+			diff := replaceNbsp(cmp.Diff(want, got))
+			l.runner.Log("unexpected log message (-want +got):\n", diff)
+			l.failed = true
+		}
+	}
 }
 
 func (l *Logger) getCurrent() string {
@@ -409,7 +490,9 @@ func (l *Logger) Done() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if l.cur < len(l.truth) {
+	if l.ignoreOrder {
+		l.compareFinalSortedLogs()
+	} else if l.cur < len(l.truth) {
 		// We're missing some log messages that we expected.
 		l.failed = true
 		for ; l.cur < len(l.truth); l.cur++ {
