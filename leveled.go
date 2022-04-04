@@ -93,34 +93,42 @@ func (l *LeveledLogger) SetFilterLevel(lvl level.Level) {
 }
 
 // Error sends the given key value pairs to the error logger.
-func (l *LeveledLogger) Error(keyvals ...interface{}) {
+func (l *LeveledLogger) Error(msg string, err error, keyvals ...interface{}) {
 	if l.filterLevel&level.Error > 0 {
-		l.log(level.Error, keyvals...)
+		kvs := []interface{}{"error", err}
+
+		// See if this error has extra keyval pairs we should add.
+		if lErr, ok := err.(LoggableError); ok {
+			kvs = append(kvs, lErr.ErrorValues()...)
+		}
+
+		l.log(level.Error, msg, append(kvs, keyvals...)...)
 	}
 }
 
 // Info sends the given key value pairs to the info logger.
-func (l *LeveledLogger) Info(keyvals ...interface{}) {
+func (l *LeveledLogger) Info(msg string, keyvals ...interface{}) {
 	if l.filterLevel&level.Info > 0 {
-		l.log(level.Info, keyvals...)
+		l.log(level.Info, msg, keyvals...)
 	}
 }
 
 // Debug sends the given key value pairs to the debug logger.
-func (l *LeveledLogger) Debug(keyvals ...interface{}) {
+func (l *LeveledLogger) Debug(msg string, keyvals ...interface{}) {
 	if l.filterLevel&level.Debug > 0 {
-		l.log(level.Debug, keyvals...)
+		l.log(level.Debug, msg, keyvals...)
 	}
 }
 
 // Trace sends the given key value pairs to the trace logger.
-func (l *LeveledLogger) Trace(keyvals ...interface{}) {
+func (l *LeveledLogger) Trace(msg string, keyvals ...interface{}) {
 	if l.filterLevel&level.Trace > 0 {
-		l.log(level.Trace, keyvals...)
+		l.log(level.Trace, msg, keyvals...)
 	}
 }
 
-func (l *LeveledLogger) log(lvl level.Level, keyvals ...interface{}) {
+func (l *LeveledLogger) log(lvl level.Level, msg string, keyvals ...interface{}) {
+	keyvals = append([]interface{}{"msg", msg}, keyvals...)
 	ms := logmap.FromKeyvals(keyvals...)
 
 	line, err := ms.JSONString()

@@ -27,8 +27,17 @@ package log
 // the logger may be any implementation of logger so long as it provides--or is
 // wrapped by a struct that provides--these four functions.
 type Logger interface {
-	Error(keyvals ...interface{})
-	Info(keyvals ...interface{})
-	Debug(keyvals ...interface{})
-	Trace(keyvals ...interface{})
+	Error(msg string, err error, keyvals ...interface{})
+	Info(msg string, keyvals ...interface{})
+	Debug(msg string, keyvals ...interface{})
+	Trace(msg string, keyvals ...interface{})
+}
+
+// LoggableError is an extention to the builtin error type, that allows for arbitrary keyval pairs to be added.
+// When log.Error is called, the error is checked against this interface and logs any extra values returned.
+// These values will be added between the error message (Error()) and the rest of the keyval... pairs.
+// i.e. msg, err, errValues..., keyvals...
+type LoggableError interface {
+	Error() string
+	ErrorValues() []interface{}
 }

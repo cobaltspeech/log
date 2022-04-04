@@ -23,30 +23,40 @@ func With(l Logger, keyvals ...interface{}) Logger {
 		return l
 	}
 
-	return &contextLogger{l, keyvals}
+	return &contextLogger{l, keyvals, ""}
+}
+
+// WithMsgPrefix returns a new contextual Logger that will prepend the log message with the given string.
+func WithMsgPrefix(l Logger, prefix string) Logger {
+	if prefix == "" {
+		return l
+	}
+
+	return &contextLogger{l, nil, prefix}
 }
 
 type contextLogger struct {
-	log     Logger
-	keyvals []interface{}
+	log       Logger
+	keyvals   []interface{}
+	msgPrefix string
 }
 
-func (c *contextLogger) Error(keyvals ...interface{}) {
+func (c *contextLogger) Error(msg string, err error, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Error(kvs...)
+	c.log.Error(c.msgPrefix+msg, err, kvs...)
 }
 
-func (c *contextLogger) Info(keyvals ...interface{}) {
+func (c *contextLogger) Info(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Info(kvs...)
+	c.log.Info(c.msgPrefix+msg, kvs...)
 }
 
-func (c *contextLogger) Debug(keyvals ...interface{}) {
+func (c *contextLogger) Debug(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Debug(kvs...)
+	c.log.Debug(c.msgPrefix+msg, kvs...)
 }
 
-func (c *contextLogger) Trace(keyvals ...interface{}) {
+func (c *contextLogger) Trace(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Trace(kvs...)
+	c.log.Trace(c.msgPrefix+msg, kvs...)
 }

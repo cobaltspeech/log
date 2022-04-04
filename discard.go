@@ -24,7 +24,7 @@ func NewDiscardLogger() *DiscardLogger {
 	return &DiscardLogger{}
 }
 
-func (l *DiscardLogger) Error(keyvals ...interface{}) {}
-func (l *DiscardLogger) Info(keyvals ...interface{})  {}
-func (l *DiscardLogger) Debug(keyvals ...interface{}) {}
-func (l *DiscardLogger) Trace(keyvals ...interface{}) {}
+func (l *DiscardLogger) Error(msg string, err error, keyvals ...interface{}) {}
+func (l *DiscardLogger) Info(msg string, keyvals ...interface{})             {}
+func (l *DiscardLogger) Debug(msg string, keyvals ...interface{})            {}
+func (l *DiscardLogger) Trace(msg string, keyvals ...interface{})            {}

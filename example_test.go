@@ -1,6 +1,8 @@
 package log_test
 
 import (
+	"errors"
+
 	"github.com/cobaltspeech/log"
 	"github.com/cobaltspeech/log/pkg/level"
 )
@@ -32,12 +34,13 @@ func Divide(l log.Logger, a, b int) int {
 		l = log.NewDiscardLogger()
 	}
 
-	l.Trace("msg", "entering Divide()")
-	defer l.Trace("msg", "exiting Divide()")
+	l.Trace("entering Divide()")
+	defer l.Trace("exiting Divide()")
 
 	if b == 0 {
 		l.Error(
-			"msg", "attempt to divide by zero",
+			"attempt to divide by zero",
+			errors.New("attempt to divide by zero"),
 			"a", a,
 			"b", b)
 
@@ -64,5 +67,5 @@ func NewEngine(l log.Logger) *Engine {
 
 // Run uses the configured logger to report events.
 func (e *Engine) Run() {
-	e.log.Debug("msg", "running engine")
+	e.log.Debug("running engine")
 }
