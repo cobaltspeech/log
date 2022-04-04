@@ -95,7 +95,14 @@ func (l *LeveledLogger) SetFilterLevel(lvl level.Level) {
 // Error sends the given key value pairs to the error logger.
 func (l *LeveledLogger) Error(msg string, err error, keyvals ...interface{}) {
 	if l.filterLevel&level.Error > 0 {
-		l.log(level.Error, msg, append([]interface{}{"error", err}, keyvals...)...)
+		kvs := []interface{}{"error", err}
+
+		// See if this error has extra keyval pairs we should add.
+		if lErr, ok := err.(LoggableError); ok {
+			kvs = append(kvs, lErr.ErrorValues()...)
+		}
+
+		l.log(level.Error, msg, append(kvs, keyvals...)...)
 	}
 }
 

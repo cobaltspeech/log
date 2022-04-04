@@ -32,3 +32,12 @@ type Logger interface {
 	Debug(msg string, keyvals ...interface{})
 	Trace(msg string, keyvals ...interface{})
 }
+
+// LoggableError is an extention to the builtin error type, that allows for arbitrary keyval pairs to be added.
+// When log.Error is called, the error is checked against this interface and logs any extra values returned.
+// These values will be added between the error message (Error()) and the rest of the keyval... pairs.
+// i.e. msg, err, errValues..., keyvals...
+type LoggableError interface {
+	Error() string
+	ErrorValues() []interface{}
+}

@@ -200,3 +200,39 @@ func (v *failingJSONMarshaler) MarshalJSON() ([]byte, error) {
 }
 
 var errInvalidValue = errors.New("invalid value")
+
+type LError struct {
+	msg     string
+	keyvals []interface{}
+}
+
+func (err LError) Error() string {
+	return err.msg
+}
+
+func (err LError) ErrorValues() []interface{} {
+	return err.keyvals
+}
+
+func TestLeveledLogger_LoggableErrors(t *testing.T) {
+	var b bytes.Buffer
+	logger := log.New(&b, "", 0)
+	l := NewLeveledLogger(WithLogger(logger))
+
+	l.Error("error_message", errors.New("the_error"), "key1", "val1")
+	le := LError{msg: "the_error", keyvals: []interface{}{"err.key1", "err.val1"}}
+	l.Error("error_message", le, "key1", "val1")
+	le2 := LError{msg: "the_error", keyvals: []interface{}{"err.key1", "err.val1", "err.key2", "err.val2"}}
+	l.Error("error_message", le2, "key1", "val1")
+
+	want := `
+error {"msg":"error_message","error":"the_error","key1":"val1"}
+error {"msg":"error_message","error":"the_error","err.key1":"err.val1","key1":"val1"}
+error {"msg":"error_message","error":"the_error","err.key1":"err.val1","err.key2":"err.val2","key1":"val1"}
+`
+	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
+		t.Log(got)
+		t.Log(want)
+		t.Errorf("default filter level: got %q, want %q", got, want)
+	}
+}
