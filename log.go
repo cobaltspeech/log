@@ -27,8 +27,8 @@ package log
 // the logger may be any implementation of logger so long as it provides--or is
 // wrapped by a struct that provides--these four functions.
 type Logger interface {
-	Error(keyvals ...interface{})
-	Info(keyvals ...interface{})
-	Debug(keyvals ...interface{})
-	Trace(keyvals ...interface{})
+	Error(msg string, err error, keyvals ...interface{})
+	Info(msg string, keyvals ...interface{})
+	Debug(msg string, keyvals ...interface{})
+	Trace(msg string, keyvals ...interface{})
 }

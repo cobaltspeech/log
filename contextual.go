@@ -31,22 +31,22 @@ type contextLogger struct {
 	keyvals []interface{}
 }
 
-func (c *contextLogger) Error(keyvals ...interface{}) {
+func (c *contextLogger) Error(msg string, err error, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Error(kvs...)
+	c.log.Error(msg, err, kvs...)
 }
 
-func (c *contextLogger) Info(keyvals ...interface{}) {
+func (c *contextLogger) Info(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Info(kvs...)
+	c.log.Info(msg, kvs...)
 }
 
-func (c *contextLogger) Debug(keyvals ...interface{}) {
+func (c *contextLogger) Debug(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Debug(kvs...)
+	c.log.Debug(msg, kvs...)
 }
 
-func (c *contextLogger) Trace(keyvals ...interface{}) {
+func (c *contextLogger) Trace(msg string, keyvals ...interface{}) {
 	kvs := append(c.keyvals, keyvals...)
-	c.log.Trace(kvs...)
+	c.log.Trace(msg, kvs...)
 }

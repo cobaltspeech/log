@@ -54,9 +54,9 @@ func TestLeveledLogger_WithOutput(t *testing.T) {
 func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
 	t.Helper()
 
-	l.Error("msg", "test_message")
+	l.Error("test_message", errors.New("the_error"))
 
-	wantJSON := `{"msg":"test_message"}`
+	wantJSON := `{"msg":"test_message","error":"the_error"}`
 	rDate := `[0-9][0-9][0-9][0-9]/[0-9][0-9]/[0-9][0-9]`
 	rTime := `[0-9][0-9]:[0-9][0-9]:[0-9][0-9]`
 	pattern := "^" + rDate + " " + rTime + " error " + wantJSON + "\n"
@@ -73,10 +73,10 @@ func logAndTest(t *testing.T, l Logger, b *bytes.Buffer) {
 
 func TestLeveledLogger_SetFilterLevel(t *testing.T) {
 	writelogs := func(l Logger, label string) {
-		l.Trace("msg", "trace_message", "label", label)
-		l.Debug("msg", "debug_message", "label", label)
-		l.Info("msg", "info_message", "label", label)
-		l.Error("msg", "error_message", "label", label)
+		l.Trace("trace_message", "label", label)
+		l.Debug("debug_message", "label", label)
+		l.Info("info_message", "label", label)
+		l.Error("error_message", errors.New("the_error"), "label", label)
 	}
 
 	var b bytes.Buffer
@@ -103,7 +103,7 @@ func TestLeveledLogger_SetFilterLevel(t *testing.T) {
 	writelogs(l, "SetFilterLevel(All)")
 
 	want := `info  {"msg":"info_message","label":"default filter level"}
-error {"msg":"error_message","label":"default filter level"}
+error {"msg":"error_message","error":"the_error","label":"default filter level"}
 debug {"msg":"debug_message","label":"WithFilterLevel(debug)"}
 info  {"msg":"info_message","label":"SetFilterLevel(Info)"}
 debug {"msg":"debug_message","label":"SetFilterLevel(Info|Debug)"}
@@ -111,7 +111,7 @@ info  {"msg":"info_message","label":"SetFilterLevel(Info|Debug)"}
 trace {"msg":"trace_message","label":"SetFilterLevel(All)"}
 debug {"msg":"debug_message","label":"SetFilterLevel(All)"}
 info  {"msg":"info_message","label":"SetFilterLevel(All)"}
-error {"msg":"error_message","label":"SetFilterLevel(All)"}
+error {"msg":"error_message","error":"the_error","label":"SetFilterLevel(All)"}
 `
 	if got := b.String(); strings.TrimSpace(got) != strings.TrimSpace(want) {
 		t.Log(got)
@@ -126,16 +126,16 @@ func TestLeveledLogger_log_jsonErrors(t *testing.T) {
 	logger := log.New(&b, "", 0)
 	l := NewLeveledLogger(WithLogger(logger))
 
-	l.Error()
-	l.Error("msg")
-	l.Error("msg", "test this")
-	l.Error("msg", &failingTextMarshaler{})
-	l.Error("msg", &failingJSONMarshaler{})
+	l.Info("t1")
+	l.Info("t2", "msg")
+	l.Info("t3", "test this")
+	l.Info("t4", "failingTextMarshaller", &failingTextMarshaler{})
+	l.Info("t5", "failingJSONMarshaler", &failingJSONMarshaler{})
 
 	//nolint: lll // log truth can't be broken into multiple lines
-	want := `error {}
-error {"msg":"missing"}
-error {"msg":"test this"}
+	want := `info  {"msg":"t1"}
+info  {"msg":"t2","msg":"missing"}
+info  {"msg":"t3","test this":"missing"}
 error {"msg":"logging failure","error":"json: error calling MarshalJSON for type logmap.MapSlice: json: error calling MarshalText for type *log.failingTextMarshaler: invalid value"}
 error {"msg":"logging failure","error":"json: error calling MarshalJSON for type logmap.MapSlice: json: error calling MarshalJSON for type *log.failingJSONMarshaler: invalid value"}
 `
@@ -164,7 +164,7 @@ func TestLeveledLogger_Concurrent(t *testing.T) {
 		go func(i int) {
 			defer wg.Done()
 
-			l.Error("msg", "concurrent_logging_test", "i", i)
+			l.Error("concurrent_logging_test", errors.New("the_error"), "i", i)
 		}(i)
 	}
 	wg.Wait()
